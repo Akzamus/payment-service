@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  postgres:
+    container_name: payment-service-postgres-container
+    image: postgres:alpine
+    environment:
+      POSTGRES_DB: payment_service_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /data/postgres
+    volumes:
+      - payment-service-postgres-volume:/data/postgres
+    ports:
+      - "5433:5432"
+    networks:
+      - payment-service-postgres-network
+    restart: always
+
+networks:
+  payment-service-postgres-network:
+    driver: bridge
+
+volumes:
+  payment-service-postgres-volume:
+
