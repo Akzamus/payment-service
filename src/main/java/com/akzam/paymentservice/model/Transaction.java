@@ -22,7 +22,7 @@ public class Transaction {
     @JoinColumn(name = "from_account_id", nullable = false)
     private Account fromAccount;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
     @JoinColumn(name = "to_account_id", nullable = false)
     private Account toAccount;
 

@@ -1,16 +1,10 @@
 package com.akzam.paymentservice.DTO;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.NotBlank;
 
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class AuthenticationRequest {
-
-    private String username;
-    private String password;
-}
+public record AuthenticationRequest (
+        @NotBlank(message = "Username cannot be blank")
+        String username,
+        @NotBlank(message = "Password cannot be blank")
+        String password
+) { }

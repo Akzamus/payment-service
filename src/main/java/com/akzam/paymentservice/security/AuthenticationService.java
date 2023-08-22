@@ -3,13 +3,14 @@ package com.akzam.paymentservice.security;
 import com.akzam.paymentservice.DTO.AuthenticationRequest;
 import com.akzam.paymentservice.DTO.AuthenticationResponse;
 import com.akzam.paymentservice.DTO.RegisterRequest;
+import com.akzam.paymentservice.exception.UserAlreadyExistsException;
+import com.akzam.paymentservice.exception.UserNotFoundException;
 import com.akzam.paymentservice.model.Role;
 import com.akzam.paymentservice.model.User;
 import com.akzam.paymentservice.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -35,10 +36,17 @@ public class AuthenticationService {
     }
 
     public AuthenticationResponse register(RegisterRequest request) {
+        userRepository.findByUsername(request.username())
+                .ifPresent(foundUser -> {
+                    throw new UserAlreadyExistsException(
+                            "User with the username " + foundUser.getUsername() + " already exists."
+                    );
+                });
+
         User user = User.builder()
-                .fullName(request.getFullName())
-                .username(request.getUsername())
-                .password(passwordEncoder.encode(request.getPassword()))
+                .fullName(request.fullName())
+                .username(request.username())
+                .password(passwordEncoder.encode(request.password()))
                 .role(Role.USER)
                 .build();
 
@@ -53,13 +61,13 @@ public class AuthenticationService {
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        request.getUsername(),
-                        request.getPassword()
+                        request.username(),
+                        request.password()
                 )
         );
 
-        User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        User user = userRepository.findByUsername(request.username())
+                .orElseThrow(() -> new UserNotFoundException("User with this username was not found"));
         String jwtToken = jwtService.generateToken(user);
 
         return AuthenticationResponse.builder()
