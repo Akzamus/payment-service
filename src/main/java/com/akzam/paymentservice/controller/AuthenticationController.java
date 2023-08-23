@@ -1,11 +1,13 @@
 package com.akzam.paymentservice.controller;
 
-import com.akzam.paymentservice.DTO.AuthenticationRequest;
-import com.akzam.paymentservice.DTO.AuthenticationResponse;
-import com.akzam.paymentservice.DTO.RegisterRequest;
-import com.akzam.paymentservice.security.AuthenticationService;
+import com.akzam.paymentservice.DTO.auth.AuthenticationRequest;
+import com.akzam.paymentservice.DTO.auth.AuthenticationResponse;
+import com.akzam.paymentservice.DTO.auth.RegisterRequest;
+import com.akzam.paymentservice.service.AuthenticationService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,7 +28,16 @@ public class AuthenticationController {
     }
 
     @PostMapping("/authenticate")
-    public ResponseEntity<AuthenticationResponse> register(@Valid @RequestBody AuthenticationRequest request) {
+    public ResponseEntity<AuthenticationResponse> authenticate(@Valid @RequestBody AuthenticationRequest request) {
         return ResponseEntity.ok(authenticationService.authenticate(request));
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<AuthenticationResponse> refreshToken(
+            @Pattern(regexp = "Bearer .*", message = "Authorization header must start with 'Bearer '")
+            @RequestHeader(HttpHeaders.AUTHORIZATION)
+            String authHeader
+    ) {
+        return ResponseEntity.ok(authenticationService.refreshToken(authHeader));
     }
 }

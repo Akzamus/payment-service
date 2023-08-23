@@ -1,6 +1,6 @@
 package com.akzam.paymentservice.configuration;
 
-import com.akzam.paymentservice.exception.UserNotFoundException;
+import com.akzam.paymentservice.exception.user.UserNotFoundException;
 import com.akzam.paymentservice.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;

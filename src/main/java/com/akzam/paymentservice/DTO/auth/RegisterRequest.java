@@ -1,4 +1,4 @@
-package com.akzam.paymentservice.DTO;
+package com.akzam.paymentservice.DTO.auth;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

@@ -1,10 +1,14 @@
-package com.akzam.paymentservice.security;
+package com.akzam.paymentservice.service;
 
-import com.akzam.paymentservice.DTO.AuthenticationRequest;
-import com.akzam.paymentservice.DTO.AuthenticationResponse;
-import com.akzam.paymentservice.DTO.RegisterRequest;
-import com.akzam.paymentservice.exception.UserAlreadyExistsException;
-import com.akzam.paymentservice.exception.UserNotFoundException;
+import com.akzam.paymentservice.DTO.auth.AuthenticationRequest;
+import com.akzam.paymentservice.DTO.auth.AuthenticationResponse;
+import com.akzam.paymentservice.DTO.auth.RegisterRequest;
+import com.akzam.paymentservice.exception.InvalidTokenException;
+import com.akzam.paymentservice.exception.user.UserAlreadyExistsException;
+import com.akzam.paymentservice.exception.user.UserNotFoundException;
+import com.akzam.paymentservice.jwt.JwtFactory;
+import com.akzam.paymentservice.jwt.JwtParser;
+import com.akzam.paymentservice.jwt.JwtValidator;
 import com.akzam.paymentservice.model.Role;
 import com.akzam.paymentservice.model.User;
 import com.akzam.paymentservice.repository.UserRepository;
@@ -18,19 +22,25 @@ import org.springframework.stereotype.Service;
 public class AuthenticationService {
 
     private final UserRepository userRepository;
-    private final JwtService jwtService;
+    private final JwtFactory jwtFactory;
+    private final JwtValidator jwtValidator;
+    private final JwtParser jwtParser;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
 
     @Autowired
     public AuthenticationService(
             UserRepository userRepository,
-            JwtService jwtService,
+            JwtFactory jwtFactory,
+            JwtValidator jwtValidator,
+            JwtParser jwtParser,
             PasswordEncoder passwordEncoder,
             AuthenticationManager authenticationManager
     ) {
         this.userRepository = userRepository;
-        this.jwtService = jwtService;
+        this.jwtFactory = jwtFactory;
+        this.jwtValidator = jwtValidator;
+        this.jwtParser = jwtParser;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
     }
@@ -51,10 +61,13 @@ public class AuthenticationService {
                 .build();
 
         userRepository.save(user);
-        String jwtToken = jwtService.generateToken(user);
+
+        String accessToken = jwtFactory.generateAccessToken(user);
+        String refreshToken = jwtFactory.generateRefreshToken(user);
 
         return AuthenticationResponse.builder()
-                .token(jwtToken)
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
                 .build();
     }
 
@@ -66,12 +79,37 @@ public class AuthenticationService {
                 )
         );
 
+
         User user = userRepository.findByUsername(request.username())
                 .orElseThrow(() -> new UserNotFoundException("User with this username was not found"));
-        String jwtToken = jwtService.generateToken(user);
+
+
+        String accessToken = jwtFactory.generateAccessToken(user);
+        String refreshToken = jwtFactory.generateRefreshToken(user);
 
         return AuthenticationResponse.builder()
-                .token(jwtToken)
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
                 .build();
+    }
+
+    public AuthenticationResponse refreshToken(String authHeader) {
+        String refreshToken = authHeader.substring(7);
+
+        String username = jwtParser.extractUsername(refreshToken)
+                .orElseThrow(() -> new InvalidTokenException("Username cannot be null"));
+
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User with this username was not found"));
+
+        if (!jwtValidator.isTokenValid(refreshToken, user)) {
+            throw new InvalidTokenException("Invalid refresh token");
+        }
+
+        return AuthenticationResponse.builder()
+                        .accessToken(jwtFactory.generateAccessToken(user))
+                        .refreshToken(refreshToken)
+                        .build();
     }
 }
